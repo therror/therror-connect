@@ -4,7 +4,7 @@ therror-express implements a connect/express error handler middleware. It also s
 
 Logs all errors (by default) and replies with an error payload with only the error relevant information. Currently supports [content negotiation](https://en.wikipedia.org/wiki/Content_negotiation) for `text/plain` and `application/json`.
 
-This middleware behaves differently while in `development` or `production` environments. While in production, any internal details (such stack traces) will be revealed, while in development that useful info is **appended** to the production response payload. Set your flavour by using de-facto env var `NODE_ENV` (used also internally by [express](http://stackoverflow.com/questions/16978256/what-is-node-env-in-express)).
+This middleware behaves differently while in `development` or `production` environments. While in production, internal details (such stack traces) will not be revealed, while in development that useful info is **appended** to the production response payload. Set your flavour by using de-facto env var `NODE_ENV` (used also internally by [express](http://stackoverflow.com/questions/16978256/what-is-node-env-in-express)).
 
 It's written in ES6, for node >= 4 
 
