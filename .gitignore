@@ -2,5 +2,6 @@ node_modules/
 .idea/
 coverage/
 
+.orig
 
 npm-debug.log
