@@ -4,8 +4,6 @@ therror-express implements a connect/express error handler middleware for [Therr
 
 Logs all errors (by default) and replies with an error payload with only the error relevant information. Currently supports [content negotiation](https://en.wikipedia.org/wiki/Content_negotiation) for `text/plain` and `application/json`.
 
-This middleware can behaves differently while in `development` or `production` (default), hiding error internal details (such stack traces) will not be revealed, while in development that useful info is **appended** to the production response payload.
-
 It's written in ES6, for node >= 4 
 
 [![npm version](https://badge.fury.io/js/therror-connect.svg)](http://badge.fury.io/js/therror-connect)
@@ -27,34 +25,27 @@ let app = connect();
 
 // The last one middleware added to your express app
 app.use(errorHandler({
-  log: true, // 
-  development: process.NODE_ENV === 'development' // show stack traces and causes (default: false) 
+  log: true, // use the `log` method in the ServerError to log it (default: true)
+  development: process.NODE_ENV === 'development' // return stack traces and causes in the payload (default: false) 
 }));
 ```
 
-### Therror integration
-
-If you are using Therror in an HTTP app, you should use [ServerErrors](https://github.com/therror/therror#servererrors), which provides lots of goodies for server error management. `therror-connect` will use the `statusCode` property, `toPayload()` and `log()` functions to automatically manage the response with 0 effort for your side
+### Full Example
 ```js
 const Therror = require('therror'),
       errorHandler = require('therror-connect');
 
 Therror.Loggable.logger = require('logops');
 
-class UnauthorizedError extends Therror.ServerError({
- statusCode: 401,
- level: 'error'
-}) {};
-
 app.use(
  function(req, res, next) {
    user = { id: 12, email: 'john.doe@mailinator.com' };
-   next(new UnauthorizedError('User ${id} not authorized', user));
+   next(new Therror.ServerError.Unauthorized('User ${id} not authorized', user));
  },
  errorHandler()
 );
 /* Writes log:  
-      ERROR UnauthorizedError: User 12 not authorized
+      UnauthorizedError: User 12 not authorized
       UnauthorizedError: User 12 not authorized { id: 12, email: 'john.doe@mailinator.com' }
           at Object.<anonymous> (/Users/javier/Documents/Proyectos/logops/deleteme.js:17:11)
           at Module._compile (module.js:409:26)
@@ -79,18 +70,14 @@ let errorHandler = require('therror-connect');
 **errorHandler(options)**
 Creates the middleware configured with the provided `options` object
 
-**`options.log`** can be
- * `true`: logs the error using `console.error`. _default_
- * `false`: logs nothing. 
- * `function(err, context) {}`: provide your custom log function. `err` is the error that arrived to the middleware and `context` is an object with `req` (http request) and `res` (http response) properties
+**`options.log`** `[Boolean]` can be
+ * `true`: logs the error using the `error.log` method. _default_
+ * `false`: does nothing. 
  
- ```js
- app.use(errorHandler({ log: customLog }));
- function customLog(err, context) {
-   context.req.log.error(err); // get the logger that other mw has set in the request
- }
- ```
-
+**`options.development`** `[Boolean]` can be
+ * `false`: Dont add stack traces and development info to the payload. _default_
+ * `true`: Add development info to the payload. 
+ 
 ## Peer Projects
 * [therror](https://github.com/therror/therror): The Therror library, easy errors for nodejs
 * [serr](https://github.com/therror/serr): Error serializer to Objects and Strings
