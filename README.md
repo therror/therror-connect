@@ -10,7 +10,6 @@ It's written in ES6, for node >= 4
 [![Build Status](https://travis-ci.org/therror/therror-connect.svg)](https://travis-ci.org/therror/therror-connect)
 [![Coverage Status](https://coveralls.io/repos/therror/therror-connect/badge.svg?branch=master)](https://coveralls.io/r/therror/therror-connect?branch=master)
 
-
 ## Installation 
 ```bash
  npm install --save therror-connect
