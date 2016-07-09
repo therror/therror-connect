@@ -15,98 +15,57 @@ describe('errorHandler()', function() {
         .expect(500, done);
   });
 
-  describe('writting status code', function() {
-    it('should set 500 when invalid one provided', function(done) {
-      var server = createServer({statusCode: 200});
+  describe('fallback to ServerError', function() {
+    it('should catch errors and transform to Unexpected ServerError', function(done) {
+      var error = new Error('boom!');
+      var server = createServer(error);
+
       request(server)
           .get('/')
-          .expect(500, done);
+          .set('Accept', 'text/plain')
+          .expect(500, 'InternalServerError: Unexpected Error', done);
     });
 
-    it('should set 500 when no one provided', function(done) {
-      var server = createServer({});
+    it('should catch strings and transform to Unexpected ServerError', function(done) {
+      var server = createServer('boom!');
       request(server)
           .get('/')
-          .expect(500, done);
+          .set('Accept', 'text/plain')
+          .expect(500, 'InternalServerError: Unexpected Error', done);
     });
 
-    it('should set the provided one', function(done) {
-      var server = createServer({statusCode: 404});
+    it('should catch numbers and transform to Unexpected ServerError', function(done) {
+      var server = createServer(1);
       request(server)
           .get('/')
-          .expect(404, done);
+          .set('Accept', 'text/plain')
+          .expect(500, 'InternalServerError: Unexpected Error', done);
+    });
+
+    it('should catch objects and transform to Unexpected ServerError', function(done) {
+      var server = createServer({foo: 1});
+      request(server)
+          .get('/')
+          .set('Accept', 'text/plain')
+          .expect(500, 'InternalServerError: Unexpected Error', done);
     });
   });
 
   describe('in other environment than "development"', function() {
     describe('when client accepts text/plain', function() {
-      it('should serialize error w/o stacktraces', function(done) {
-        var error = new TypeError('boom!');
-        var server = createServer(error);
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, 'TypeError: boom!', done);
-      });
-
-      it('should serialize therror w/o stacktraces', function(done) {
-        var error = new Therror.HTTP.NotFound('boom!');
+      it('should serialize ServerErrors w/o stacktraces', function(done) {
+        var error = new Therror.ServerError.NotFound('boom!');
         var server = createServer(error);
         request(server)
             .get('/')
             .set('Accept', 'text/plain')
             .expect(404, 'NotFound: boom!', done);
       });
-
-      it('should serialize strings', function(done) {
-        var server = createServer('boom!');
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, 'boom!', done);
-      });
-
-      it('should serialize number', function(done) {
-        var server = createServer(42.1);
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, '42.1', done);
-      });
-
-      it('should not serialize objects to avoid property reveal', function(done) {
-        var server = createServer({a: 1});
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, '[object Object]', done)
-      });
-
-      it('should not serialize objects with a toString method to avoid property reveal', function(done) {
-        var server = createServer({toString: function() { return 'boom!' }});
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, '[object Object]', done)
-      });
     });
 
     describe('when client accepts application/json', function() {
-      it('should serialize error w/o stacktraces', function(done) {
-        var error = new TypeError('boom!');
-        var server = createServer(error);
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, JSON.stringify({
-              error: 'TypeError',
-              message: 'boom!'
-            }), done);
-      });
-
       it('should serialize therror w/o stacktraces', function(done) {
-        var error = new Therror.HTTP.NotFound('boom!');
+        var error = new Therror.ServerError.NotFound('boom!');
         error.toPayload = function() {
           return {
             error: this.name,
@@ -125,136 +84,27 @@ describe('errorHandler()', function() {
               custom: true
             }), done);
       });
-
-      it('should serialize strings', function(done) {
-        var server = createServer('boom!');
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"boom!"', done);
-      });
-
-      it('should serialize number', function(done) {
-        var server = createServer(42.1);
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"42.1"', done);
-      });
-
-      it('should not serialize objects to avoid property reveal', function(done) {
-        var server = createServer({a: 1});
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"[object Object]"', done)
-      });
-
-      it('should not serialize objects with a toString method to avoid property reveal', function(done) {
-        var server = createServer({toString: function() { return 'boom!' }});
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"[object Object]"', done)
-      });
     });
   });
 
-
   describe('in "development" environment', function() {
-    var prev;
-    before(function() {
-      prev = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
-    });
-    after(function() {
-      process.env.NODE_ENV = prev;
-    });
     describe('when client accepts text/plain', function() {
-      it('should serialize error with stacktraces', function(done) {
-        var error = new TypeError('boom!');
-        var server = createServer(error);
+      it('should serialize ServerErrors with stacktraces', function(done) {
+        var error = new Therror.ServerError.NotFound('boom!');
+        var server = createServer(error, { development: true });
         request(server)
             .get('/')
             .set('Accept', 'text/plain')
-            .expect(500, 'TypeError: boom!\n\nDevelopment info:\n' + serr(error).toString(true), done);
-      });
-
-      it('should serialize therror with stacktraces', function(done) {
-        var error = new Therror.HTTP.NotFound('boom!');
-        var server = createServer(error);
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(404, 'NotFound: boom!\n\nDevelopment info:\n' + serr(error).toString(true), done);
-      });
-
-      it('should serialize strings', function(done) {
-        var server = createServer('boom!');
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, 'boom!', done);
-      });
-
-      it('should serialize number', function(done) {
-        var server = createServer(42.1);
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, '42.1', done);
-      });
-
-      it('should not serialize objects', function(done) {
-        var server = createServer({a: 1});
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, '[object Object]', done)
-      });
-
-      it('should not serialize objects with a toString method', function(done) {
-        var server = createServer({toString: function() { return 'boom!' }});
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500, '[object Object]', done)
+            .expect(404, /NotFound: boom!\n\nDevelopment info:.*/, done);
       });
     });
 
     describe('when client accepts application/json', function() {
       it('should serialize error with development info', function(done) {
-        var error = new TypeError('boom!');
-        var server = createServer(error);
+        var error = new Therror.ServerError.NotFound('boom!');
+        var server = createServer(error, { development: true });
         var $$delevelopmentInfo = serr(error).toObject(true);
         $$delevelopmentInfo.stack = $$delevelopmentInfo.stack.split('\n');
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, JSON.stringify({
-              error: 'TypeError',
-              message: 'boom!',
-              $$delevelopmentInfo: $$delevelopmentInfo
-            }), done);
-      });
-
-      it('should serialize therror with development info', function(done) {
-        var error = new Therror.HTTP.NotFound('boom!');
-        error.toPayload = function() {
-          return {
-            error: this.name,
-            message: this.message,
-            custom: true
-          }
-        };
-        var $$delevelopmentInfo = serr(error).toObject(true);
-        $$delevelopmentInfo.stack = $$delevelopmentInfo.stack.split('\n');
-        var server = createServer(error);
         request(server)
             .get('/')
             .set('Accept', 'application/json')
@@ -262,150 +112,52 @@ describe('errorHandler()', function() {
             .expect(404, JSON.stringify({
               error: 'NotFound',
               message: 'boom!',
-              custom: true,
               $$delevelopmentInfo: $$delevelopmentInfo
             }), done);
-      });
-
-      it('should serialize strings', function(done) {
-        var server = createServer('boom!');
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"boom!"', done);
-      });
-
-      it('should serialize number', function(done) {
-        var server = createServer(42.1);
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"42.1"', done);
-      });
-
-      it('should not serialize objects, but append dev info', function(done) {
-        var server = createServer({a: 1});
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"[object Object]\\n\\nDevelopment info:\\n{ a: 1 }"', done)
-      });
-
-      it('should not serialize objects with a toString method, but append dev info', function(done) {
-        var server = createServer({toString: function() { return 'boom!' }});
-        request(server)
-            .get('/')
-            .set('Accept', 'application/json')
-            .expect('Content-Type', /application\/json/)
-            .expect(500, '"boom!"', done)
       });
     });
   });
 
   describe('logging', function() {
 
-    it('should log to console.error by default', function() {
-      sandbox.stub(console, 'error');
+    it('should log using err.log', function(done) {
+      var error = new Therror.ServerError.NotFound('boom!');
+      sandbox.stub(error, 'log');
 
-      var errorHandlerMiddleware = errorHandler();
-      var error = new Error('boom!');
-      var server = http.createServer(function(req, res) {
-        errorHandlerMiddleware(error, req, res, function() {});
-      });
+      var server = createServer(error, { log: true });
 
       request(server)
           .get('/')
           .set('Accept', 'text/plain')
-          .expect(500)
+          .expect(404)
           .end(function(err, res) {
             if (err) return done(err);
-            expect(console.error).to.have.been.calledWith(error);
-            expect(console.error.args[0][1]).to.not.exits;
+            expect(error.log).to.have.been.called;
+            var params = error.log.args[0][0]; // {req, res}
+            expect(params).to.have.property('req');
+            expect(params).to.have.property('res');
             done();
           });
     });
 
-    describe('when using log: true', function() {
-      it('should log errors without the context in console.error', function(done) {
-        sandbox.stub(console, 'error');
-        var error = new Error('boom!');
-        var server = createServer(error, {log: true});
+    it('should not log using err.log when configured', function(done) {
+      var error = new Therror.ServerError.NotFound('boom!');
+      sandbox.stub(error, 'log');
 
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500)
-            .end(function(err, res) {
-              if (err) return done(err);
-              expect(console.error).to.have.been.calledWith(error);
-              expect(console.error.args[0][1]).to.not.exits;
-              done();
-            });
-      });
+      var server = createServer(error, { log: false });
+
+      request(server)
+          .get('/')
+          .set('Accept', 'text/plain')
+          .expect(404)
+          .end(function(err, res) {
+            if (err) return done(err);
+            expect(error.log).to.not.have.been.called;
+
+            done();
+          });
     });
 
-    describe('when using log: false', function() {
-      it('should not log errors to console.error', function(done) {
-        sandbox.stub(console, 'error');
-        var error = new Error('boom!');
-        var server = createServer(error, {log: false});
-
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500)
-            .end(function(err, res) {
-              if (err) return done(err);
-              expect(console.error).to.not.have.been.called;
-              done();
-            });
-      });
-    });
-
-    describe('when providing a log function', function() {
-      it('should log errors there adding the request/response context', function(done) {
-        var log = sandbox.spy();
-
-        var error = new Error('boom!');
-        var server = createServer(error, {log: log});
-
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(500)
-            .end(function(err, res) {
-              if (err) return done(err);
-              expect(log).to.have.been.calledWith(error);
-              expect(log.args[0][1]).to.have.property('req');
-              expect(log.args[0][1]).to.have.property('res');
-              done();
-            });
-      });
-    });
-
-    describe('when a Loggable Therror reaches the middleware', function() {
-      it('should use the log method from the Therror with the provided context', function(done) {
-        class TestError extends Therror.ServerError() {}
-        var error = new TestError('Boom!');
-
-        sandbox.stub(error, 'log');
-        var server = createServer(error);
-        request(server)
-            .get('/')
-            .set('Accept', 'text/plain')
-            .expect(503)
-            .end(function(err, res) {
-              if (err) return done(err);
-              expect(error.log).to.have.been.called;
-              expect(error.log.args[0][0]).to.have.property('req');
-              expect(error.log.args[0][0]).to.have.property('res');
-              done();
-            });
-      });
-    });
   });
 
   describe('headers sent', function() {
@@ -436,8 +188,9 @@ describe('errorHandler()', function() {
 
 function createServer(error, opt) {
   var errorHandlerMiddleware = errorHandler(Object.assign({
-    // Dont log by default in test
-    log: false
+    // dont log by default in test
+    log: false,
+    development: false
   }, opt));
 
   return http.createServer(function(req, res) {

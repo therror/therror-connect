@@ -1,10 +1,10 @@
 # therror-connect
 
-therror-express implements a connect/express error handler middleware. It also supports ServerError [therror](https://github.com/therror/therror)s
+therror-express implements a connect/express error handler middleware for [Therror.ServerError](https://github.com/therror/therror)
 
 Logs all errors (by default) and replies with an error payload with only the error relevant information. Currently supports [content negotiation](https://en.wikipedia.org/wiki/Content_negotiation) for `text/plain` and `application/json`.
 
-This middleware behaves differently while in `development` or `production` environments. While in production, internal details (such stack traces) will not be revealed, while in development that useful info is **appended** to the production response payload. Set your flavour by using de-facto env var `NODE_ENV` (used also internally by [express](http://stackoverflow.com/questions/16978256/what-is-node-env-in-express)).
+This middleware can behaves differently while in `development` or `production` (default), hiding error internal details (such stack traces) will not be revealed, while in development that useful info is **appended** to the production response payload.
 
 It's written in ES6, for node >= 4 
 
@@ -26,7 +26,10 @@ const connect = require('connect');
 let app = connect();
 
 // The last one middleware added to your express app
-app.use(errorHandler());
+app.use(errorHandler({
+  log: true, // 
+  development: process.NODE_ENV === 'development' // show stack traces and causes (default: false) 
+}));
 ```
 
 ### Therror integration
@@ -41,7 +44,7 @@ Therror.Loggable.logger = require('logops');
 class UnauthorizedError extends Therror.ServerError({
  statusCode: 401,
  level: 'error'
-});
+}) {};
 
 app.use(
  function(req, res, next) {
@@ -50,7 +53,7 @@ app.use(
  },
  errorHandler()
 );
-/* Writes:  
+/* Writes log:  
       ERROR UnauthorizedError: User 12 not authorized
       UnauthorizedError: User 12 not authorized { id: 12, email: 'john.doe@mailinator.com' }
           at Object.<anonymous> (/Users/javier/Documents/Proyectos/logops/deleteme.js:17:11)
