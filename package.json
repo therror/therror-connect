@@ -42,7 +42,8 @@
     "release-it": "^2.4.0",
     "sinon": "^1.15.0",
     "sinon-chai": "^2.8.0",
-    "supertest": "^1.2.0"
+    "supertest": "^1.2.0",
+    "therror": ">=1.0.0-alpha.4"
   },
   "peerDependencies": {
     "therror": ">=1.0.0-alpha.4"
