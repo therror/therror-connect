@@ -8,7 +8,7 @@ It's written in ES6, for node >= 4
 
 [![npm version](https://badge.fury.io/js/therror-connect.svg)](http://badge.fury.io/js/therror-connect)
 [![Build Status](https://travis-ci.org/therror/therror-connect.svg)](https://travis-ci.org/therror/therror-connect)
-[![Coverage Status](https://coveralls.io/repos/therror/therror-connect/badge.svg?branch=master)](https://coveralls.io/r/therror/therror-connect?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/therror/therror-connect/badge.svg?branch=master)](https://coveralls.io/github/therror/therror-connect?branch=master)
 
 ## Installation 
 ```bash
