@@ -25,7 +25,8 @@ let app = connect();
 // The last one middleware added to your express app
 app.use(errorHandler({
   log: true, // use the `log` method in the ServerError to log it (default: true)
-  development: process.NODE_ENV === 'development' // return stack traces and causes in the payload (default: false) 
+  development: process.NODE_ENV === 'development' // return stack traces and causes in the payload (default: false),
+  unexpectedClass: Therror.ServerError.InternalServerError // When a strange thing reaches this middleware trying to behave as an error (such a Number, String, obj..), this error class will be instantiated, logged, and returned to the client. 
 }));
 ```
 
@@ -76,6 +77,8 @@ Creates the middleware configured with the provided `options` object
 **`options.development`** `[Boolean]` can be
  * `false`: Dont add stack traces and development info to the payload. _default_
  * `true`: Add development info to the payload. 
+ 
+**`options.unexpectedClass`** `[class]` The `Therror.ServerError` class to instantiate when an unmanegeable error reaches the middleware. _defaults to `Therror.ServerError.InternalServerError`_
  
 ## Peer Projects
 * [therror](https://github.com/therror/therror): The Therror library, easy errors for nodejs

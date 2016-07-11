@@ -49,6 +49,27 @@ describe('errorHandler()', function() {
           .set('Accept', 'text/plain')
           .expect(500, 'InternalServerError: Unexpected Error', done);
     });
+
+    it('should use UnexpectedError class provided', function(done) {
+      class MyError extends Therror.ServerError({
+        statusCode: 499
+      }) {};
+
+      var server = createServer({foo: 1}, { unexpectedClass: MyError });
+      request(server)
+          .get('/')
+          .set('Accept', 'text/plain')
+          .expect(499, done);
+    });
+
+    it('should throw if the configured UnexpectedError is not a therror', function() {
+
+      function catheo() {
+        errorHandler({ unexpectedClass: Error });
+      }
+
+      expect(catheo).to.throw(Therror, /You must provide a ServerError error/);
+    });
   });
 
   describe('in other environment than "development"', function() {
