@@ -1,6 +1,6 @@
 {
   "name": "therror-connect",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "Connect/Express Error and Therror handler",
   "repository": {
     "type": "git",
