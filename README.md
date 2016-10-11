@@ -25,7 +25,7 @@ let app = connect();
 // The last one middleware added to your express app
 app.use(errorHandler({
   log: true, // use the `log` method in the ServerError to log it (default: true)
-  development: process.NODE_ENV === 'development' // return stack traces and causes in the payload (default: false),
+  development: process.env.NODE_ENV === 'development' // return stack traces and causes in the payload (default: false),
   unexpectedClass: Therror.ServerError.InternalServerError // When a strange thing reaches this middleware trying to behave as an error (such a Number, String, obj..), this error class will be instantiated, logged, and returned to the client. 
 }));
 ```
