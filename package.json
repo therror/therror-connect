@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "accepts": "^1.3.3",
+    "json-stringify-safe": "^5.0.1",
     "lodash": "^4.1.0",
     "serr": "^1.0.0"
   }
