@@ -16,38 +16,38 @@ describe('errorHandler()', function() {
   });
 
   describe('fallback to ServerError', function() {
-    it('should catch errors and transform to Unexpected ServerError', function(done) {
+    it('should catch errors and transform to Internal Server Error', function(done) {
       var error = new Error('boom!');
       var server = createServer(error);
 
       request(server)
           .get('/')
           .set('Accept', 'text/plain')
-          .expect(500, 'InternalServerError: Unexpected Error', done);
+          .expect(500, 'InternalServerError: An internal server error occurred', done);
     });
 
-    it('should catch strings and transform to Unexpected ServerError', function(done) {
+    it('should catch strings and transform to Internal Server Error', function(done) {
       var server = createServer('boom!');
       request(server)
           .get('/')
           .set('Accept', 'text/plain')
-          .expect(500, 'InternalServerError: Unexpected Error', done);
+          .expect(500, 'InternalServerError: An internal server error occurred', done);
     });
 
-    it('should catch numbers and transform to Unexpected ServerError', function(done) {
+    it('should catch numbers and transform to Internal Server Error', function(done) {
       var server = createServer(1);
       request(server)
           .get('/')
           .set('Accept', 'text/plain')
-          .expect(500, 'InternalServerError: Unexpected Error', done);
+          .expect(500, 'InternalServerError: An internal server error occurred', done);
     });
 
-    it('should catch objects and transform to Unexpected ServerError', function(done) {
+    it('should catch objects and transform to Internal Server Error', function(done) {
       var server = createServer({foo: 1});
       request(server)
           .get('/')
           .set('Accept', 'text/plain')
-          .expect(500, 'InternalServerError: Unexpected Error', done);
+          .expect(500, 'InternalServerError: An internal server error occurred', done);
     });
 
     it('should use UnexpectedError class provided', function(done) {

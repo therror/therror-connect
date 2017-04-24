@@ -46,7 +46,7 @@
     "therror": "^3.0.0"
   },
   "peerDependencies": {
-    "therror": ">=1.0.0"
+    "therror": ">=3.0.0"
   },
   "dependencies": {
     "accepts": "^1.3.3",
