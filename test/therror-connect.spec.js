@@ -11,16 +11,25 @@ describe('errorHandler()', function() {
     var server = createServer(new Error('boom!'));
     request(server)
         .get('/')
-        .expect('X-Content-Type-Options', 'nosniff')
-        .expect(500, done);
+        .expect('X-Content-Type-Options', 'nosniff', done);
   });
 
   it('should set CSP header', function(done) {
     var server = createServer(new Error('boom!'));
     request(server)
         .get('/')
-        .expect('Content-Security-Policy', 'default-src \'self\'')
-        .expect(500, done);
+        .expect('Content-Security-Policy', 'default-src \'self\'', done);
+  });
+
+  it('should set Content-Length header', function(done) {
+    var error = new Error('boom!');
+    var server = createServer(error);
+    var msg = 'InternalServerError: An internal server error occurred';
+
+    request(server)
+        .get('/')
+        .set('Accept', 'text/plain')
+        .expect('Content-Length', String(msg.length), done);
   });
 
   it('should end with no content with HEAD requests', function(done) {
@@ -30,7 +39,7 @@ describe('errorHandler()', function() {
       .expect('X-Content-Type-Options', 'nosniff')
       .expect('Content-Security-Policy', 'default-src \'self\'')
       .expect(function(res) {
-        if (res.headers['Content-Type']) {
+        if (res.headers['Content-Type'] || res.headers['Content-Length']) {
           throw new Error('Unexpected header');
         }
       })
