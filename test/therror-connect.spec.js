@@ -15,6 +15,14 @@ describe('errorHandler()', function() {
         .expect(500, done);
   });
 
+  it('should set CSP header', function(done) {
+    var server = createServer(new Error('boom!'));
+    request(server)
+        .get('/')
+        .expect('Content-Security-Policy', 'default-src \'self\'')
+        .expect(500, done);
+  });
+
   describe('fallback to ServerError', function() {
     it('should catch errors and transform to Internal Server Error', function(done) {
       var error = new Error('boom!');
