@@ -23,6 +23,20 @@ describe('errorHandler()', function() {
         .expect(500, done);
   });
 
+  it('should end with no content with HEAD requests', function(done) {
+    var server = createServer(new Error('boom!'));
+    request(server)
+      .head('/')
+      .expect('X-Content-Type-Options', 'nosniff')
+      .expect('Content-Security-Policy', 'default-src \'self\'')
+      .expect(function(res) {
+        if (res.headers['Content-Type']) {
+          throw new Error('Unexpected header');
+        }
+      })
+      .expect(500, undefined, done);
+  });
+
   describe('fallback to ServerError', function() {
     it('should catch errors and transform to Internal Server Error', function(done) {
       var error = new Error('boom!');
