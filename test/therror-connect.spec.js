@@ -137,6 +137,90 @@ describe('errorHandler()', function() {
             }), done);
       });
     });
+
+    describe('when client accepts text/html', function() {
+      it('should return default html', function(done) {
+        var error = new Therror.ServerError.NotFound('boom!');
+        var server = createServer(error);
+        request(server)
+            .get('/')
+            .set('Accept', 'text/html')
+            .expect('Content-Type', /text\/html/)
+            .expect(404, `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Error 404</title>
+  </head>
+  <body>
+    <h1>NotFound <i>(404)</i></h1>
+    <h2>boom!</h2>
+    <pre></pre>
+  </body>
+</html>`, done);
+      });
+
+      it('should return user defined html', function(done) {
+        var error = new Therror.ServerError.NotFound('boom!');
+        var server = createServer(error, {
+          render(data, req, res, next) {
+            next(null, '<hello>')
+          }
+        });
+        request(server)
+            .get('/')
+            .set('Accept', 'text/html')
+            .expect('Content-Type', /text\/html/)
+            .expect(404, '<hello>', done);
+      });
+
+      it('should pass precomputed arguments to the render function', function(done) {
+        var error = new Therror.ServerError.NotFound('<p>boom!</p>');
+        var server = createServer(error, {
+          render(data, req, res, next) {
+            expect(data.error).to.be.eql(error);
+            expect(data.name).to.be.eql('NotFound');
+            expect(data.message).to.be.eql('&lt;p&gt;boom!&lt;/p&gt;');
+            expect(data.statusCode).to.be.eql(404);
+            expect(data.stack).to.be.eql('');
+            next(null, '<hello>');
+          }
+        });
+        request(server)
+            .get('/')
+            .set('Accept', 'text/html')
+            .expect('Content-Type', /text\/html/, done);
+      });
+
+      it('should return default html when the user render fails async', function(done) {
+        var error = new Therror.ServerError.NotFound('boom!');
+        var server = createServer(error, {
+          render(data, req, res, next) {
+            next(new Error('RenderError'));
+          }
+        });
+        request(server)
+            .get('/')
+            .set('Accept', 'text/html')
+            .expect('Content-Type', /text\/html/)
+            .expect(500, /<!DOCTYPE html>/, done);
+      });
+
+       it('should return default html when the user render fails sync', function(done) {
+        var error = new Therror.ServerError.NotFound('boom!');
+        var server = createServer(error, {
+          render(data, req, res, next) {
+            throw new Error('RenderError');
+          }
+        });
+        request(server)
+            .get('/')
+            .set('Accept', 'text/html')
+            .expect('Content-Type', /text\/html/)
+            .expect(500, /<!DOCTYPE html>/, done);
+      });
+      
+    });
   });
 
   describe('in "development" environment', function() {
@@ -168,6 +252,19 @@ describe('errorHandler()', function() {
             }), done);
       });
     });
+
+    describe('when client accepts text/html', function() {
+      it('should return default html with dev info ', function(done) {
+        var error = new Therror.ServerError.NotFound('boom!');
+        var server = createServer(error, { development: true });
+        request(server)
+            .get('/')
+            .set('Accept', 'text/html')
+            .expect('Content-Type', /text\/html/)
+            //.expect(404,  /.*<pre>(.+)<\/pre>/, done);
+            .expect(404,  /<pre>(.|\n)+<\/pre>/, done);
+      });
+    })
   });
 
   describe('logging', function() {

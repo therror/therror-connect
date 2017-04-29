@@ -2,7 +2,7 @@
 
 therror-express implements a connect/express error handler middleware for [Therror.ServerError](https://github.com/therror/therror)
 
-Logs all errors (by default) and replies with an error payload with only the error relevant information. Currently supports [content negotiation](https://en.wikipedia.org/wiki/Content_negotiation) for `text/plain` and `application/json`.
+Logs all errors (by default) and replies with an error payload with only the error relevant information. Currently supports [content negotiation](https://en.wikipedia.org/wiki/Content_negotiation) for `text/html`, `text/plain` and `application/json`.
 
 It's written in ES6, for node >= 4 
 
@@ -22,45 +22,23 @@ const connect = require('connect');
 
 let app = connect();
 
-// The last one middleware added to your express app
-app.use(errorHandler({
-  log: true, // use the `log` method in the ServerError to log it (default: true)
-  development: process.env.NODE_ENV === 'development' // return stack traces and causes in the payload (default: false),
-  unexpectedClass: Therror.ServerError.InternalServerError // When a strange thing reaches this middleware trying to behave as an error (such a Number, String, obj..), this error class will be instantiated, logged, and returned to the client. 
-}));
+// The last one middleware added to your app
+app.use(errorHandler()); // Some options can be provided. See below
 ```
 
-### Full Example
+### Customize html with express
 ```js
-const Therror = require('therror'),
-      errorHandler = require('therror-connect');
+const express = require('express');
+const app = express();
 
-Therror.Loggable.logger = require('logops');
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
 
-app.use(
- function(req, res, next) {
-   user = { id: 12, email: 'john.doe@mailinator.com' };
-   next(new Therror.ServerError.Unauthorized('User ${id} not authorized', user));
- },
- errorHandler()
-);
-/* Writes log:  
-      UnauthorizedError: User 12 not authorized
-      UnauthorizedError: User 12 not authorized { id: 12, email: 'john.doe@mailinator.com' }
-          at Object.<anonymous> (/Users/javier/Documents/Proyectos/logops/deleteme.js:17:11)
-          at Module._compile (module.js:409:26)
-          at Object.Module._extensions..js (module.js:416:10)
-          at Module.load (module.js:343:32)
-          at Function.Module._load (module.js:300:12)
-          at Function.Module.runMain (module.js:441:10)
-          at startup (node.js:139:18)
-          at node.js:968:3
-
- Replies: 
-        401
-        { error: 'UnauthorizedError',
-         message: 'User 12 not authorized' }
-*/
+app.use(errorHandler({
+  render: function(data, req, res, cb) {
+    res.render(`/errors/${data.statusCode}`, data, cb);
+  }
+}));
 ```
 
 ### API
@@ -71,14 +49,29 @@ let errorHandler = require('therror-connect');
 Creates the middleware configured with the provided `options` object
 
 **`options.log`** `[Boolean]` can be
- * `true`: logs the error using the `error.log` method. _default_
+ * `true`: logs the error using the `error.log({req, res})` method. _default_
  * `false`: does nothing. 
  
 **`options.development`** `[Boolean]` can be
  * `false`: Dont add stack traces and development info to the payload. _default_
- * `true`: Add development info to the payload. 
+ * `true`: Add development info to the responses. 
  
 **`options.unexpectedClass`** `[class]` The `Therror.ServerError` class to instantiate when an unmanegeable error reaches the middleware. _defaults to `Therror.ServerError.InternalServerError`_
+
+**`options.render`** `Function` to customize the sent html sent. 
+```js
+function render(data, req, res, cb) {
+  // data.error: the error instance. 
+  // data.name: error name. Eg: UnauthorizedError
+  // data.message: error message. Eg: User 12 not authorized 
+  // data.statusCode: associated statusCode to the message. Eg: 401
+  // data.stack: looong string with the stacktrace (if options.development === true; else '')
+
+  // req: Incoming http request
+  // res: Outgoing http response. Warning! don't send the html, give it to the callback
+  // cb: function(err, html) callback to call with the html
+}
+```
  
 ## Peer Projects
 * [therror](https://github.com/therror/therror): The Therror library, easy errors for nodejs
@@ -86,7 +79,7 @@ Creates the middleware configured with the provided `options` object
 
 ## LICENSE
 
-Copyright 2016 [Telefónica I+D](http://www.tid.es)
+Copyright 2016,2017 [Telefónica I+D](http://www.tid.es)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
